@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Transaction, TransactionType, TransactionCategory } from '../../types'
+import type { Transaction, TransactionType } from '../../types'
 import { loadState, saveState } from '../../store'
 import { X } from 'lucide-react'
 
@@ -86,8 +86,12 @@ const TransactionForm = ({ onClose, onSuccess, editTransaction }: TransactionFor
                 <button
                   key={cat.id}
                   type="button"
-                  className={`p-2 rounded text-center text-sm ${categoryId === cat.id ? 'ring-2 ring-offset-2' : 'hover:bg-gray-50'}`}
-                  style={{ backgroundColor: cat.color + '20', color: cat.color, ringColor: cat.color }}
+                    className={`p-2 rounded text-center text-sm ${categoryId === cat.id ? 'ring-offset-2' : 'hover:bg-gray-50'}`}
+                    style={{ 
+                      backgroundColor: cat.color + '20', 
+                      color: cat.color, 
+                      ...(categoryId === cat.id ? { boxShadow: `0 0 0 2px ${cat.color}` } : {}) 
+                    }}
                   onClick={() => setCategoryId(cat.id)}
                 >
                   <div className="text-lg">{cat.icon}</div>

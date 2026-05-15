@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Budget, TransactionCategory } from '../../types'
+import type { Budget } from '../../types'
 import { loadState, saveState } from '../../store'
 import { Plus, Edit2, Trash2, AlertTriangle, CheckCircle } from 'lucide-react'
 
@@ -17,10 +17,6 @@ const BudgetPage = () => {
 
   const expenseCategories = state.categories.filter(c => c.type === 'expense')
   
-  const getCategory = (categoryId: string): TransactionCategory | undefined => {
-    return state.categories.find(c => c.id === categoryId)
-  }
-
   const getMonthSpent = (categoryId: string) => {
     return state.transactions
       .filter(t => t.type === 'expense' && t.categoryId === categoryId && t.date.startsWith(currentMonth))
@@ -102,154 +98,181 @@ const BudgetPage = () => {
 
   const getBudgetStatus = (spent: number, budget: number) => {
     const ratio = spent / budget
-    if (ratio >= 1) return { text: '已超支', color: 'text-red-600', bg: 'bg-red-50', icon: <AlertTriangle size={16} className="text-red-500" /> }
-    if (ratio >= 0.8) return { text: '即将超支', color: 'text-orange-600', bg: 'bg-orange-50', icon: <AlertTriangle size={16} className="text-orange-500" /> }
-    return { text: '正常', color: 'text-green-600', bg: 'bg-green-50', icon: <CheckCircle size={16} className="text-green-500" /> }
+    if (ratio >= 1) return { text: '已超支', color: 'red', icon: <AlertTriangle size={16} className="text-red-500" /> }
+    if (ratio >= 0.8) return { text: '即将超支', color: 'amber', icon: <AlertTriangle size={16} className="text-orange-500" /> }
+    return { text: '正常', color: 'green', icon: <CheckCircle size={16} className="text-green-500" /> }
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <div className="content">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">预算管控</h2>
+        <div className="card-head">
+          <div>
+            <h3 className="text-2xl font-bold">预算管控</h3>
+            <p className="text-gray-600">按分类设置月度预算，实时监控支出进度，超支预警提醒</p>
+          </div>
+        </div>
         <button
           onClick={() => setShowAddForm(true)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center space-x-1"
+          className="btn primary"
         >
           <Plus size={18} />
           <span>新增预算</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="p-4 bg-blue-50 rounded-lg">
-          <p className="text-sm text-gray-600">本月总预算</p>
-          <p className="text-2xl font-bold text-blue-600">¥{totalBudget.toFixed(2)}</p>
+      <div className="grid-3 mb-6">
+        <div className="card metric">
+          <div>
+            <div className="metric-top">
+              <div className="metric-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>¥</div>
+              <span className="pill blue">总预算</span>
+            </div>
+            <div className="name">本月总预算</div>
+            <div className="num text-blue-600">¥{totalBudget.toFixed(2)}</div>
+          </div>
         </div>
-        <div className="p-4 bg-red-50 rounded-lg">
-          <p className="text-sm text-gray-600">已支出</p>
-          <p className="text-2xl font-bold text-red-600">¥{totalSpent.toFixed(2)}</p>
+        <div className="card metric">
+          <div>
+            <div className="metric-top">
+              <div className="metric-icon" style={{ background: '#fef2f2', color: '#ef4444' }}>↘</div>
+              <span className="pill red">已支出</span>
+            </div>
+            <div className="name">已支出</div>
+            <div className="num text-red-600">¥{totalSpent.toFixed(2)}</div>
+          </div>
         </div>
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600">剩余预算</p>
-          <p className={`text-2xl font-bold ${totalBudget - totalSpent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            ¥{(totalBudget - totalSpent).toFixed(2)}
-          </p>
+        <div className="card metric">
+          <div>
+            <div className="metric-top">
+              <div className="metric-icon" style={{ background: '#ecfdf5', color: '#059669' }}>↗</div>
+              <span className={`pill ${totalBudget - totalSpent >= 0 ? 'green' : 'red'}`}>剩余</span>
+            </div>
+            <div className="name">剩余预算</div>
+            <div className={`num ${totalBudget - totalSpent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ¥{(totalBudget - totalSpent).toFixed(2)}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">整体进度</h3>
-          <input
-            type="month"
-            value={currentMonth}
-            onChange={(e) => setCurrentMonth(e.target.value)}
-            className="border rounded px-2 py-1 text-sm"
-          />
+      <div className="card mb-6">
+        <div className="card-body">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">整体进度</h3>
+            <input
+              type="month"
+              value={currentMonth}
+              onChange={(e) => setCurrentMonth(e.target.value)}
+              className="border rounded px-2 py-1 text-sm h-10 rounded-lg bg-white"
+            />
+          </div>
+          <div className="progress mb-2">
+            <span
+              className={`${overallProgress >= 100 ? 'bg-red-500' : overallProgress >= 80 ? 'bg-orange-500' : 'bg-green-500'}`}
+              style={{ width: `${Math.min(overallProgress, 100)}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-600">已使用 {overallProgress.toFixed(1)}%</p>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
-          <div
-            className={`h-4 rounded-full ${overallProgress >= 100 ? 'bg-red-500' : overallProgress >= 80 ? 'bg-orange-500' : 'bg-green-500'}`}
-            style={{ width: `${Math.min(overallProgress, 100)}%` }}
-          />
-        </div>
-        <p className="text-sm text-gray-600">已使用 {overallProgress.toFixed(1)}%</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">分类</th>
-                <th className="text-right p-4 text-sm font-medium text-gray-600">预算金额</th>
-                <th className="text-right p-4 text-sm font-medium text-gray-600">已支出</th>
-                <th className="text-right p-4 text-sm font-medium text-gray-600">剩余金额</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">进度</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">状态</th>
-                <th className="text-right p-4 text-sm font-medium text-gray-600">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {expenseCategories.map(cat => {
-                const budget = getCategoryBudget(cat.id)
-                const spent = getMonthSpent(cat.id)
-                const remaining = budget ? budget.amount - spent : 0
-                const progress = budget ? (spent / budget.amount) * 100 : 0
-                const status = budget ? getBudgetStatus(spent, budget.amount) : null
+      <div className="card">
+        <div className="card-body p-0">
+          <div className="table-wrap">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="text-left p-4 text-sm font-medium text-gray-600">分类</th>
+                  <th className="text-right p-4 text-sm font-medium text-gray-600">预算金额</th>
+                  <th className="text-right p-4 text-sm font-medium text-gray-600">已支出</th>
+                  <th className="text-right p-4 text-sm font-medium text-gray-600">剩余金额</th>
+                  <th className="text-left p-4 text-sm font-medium text-gray-600">进度</th>
+                  <th className="text-left p-4 text-sm font-medium text-gray-600">状态</th>
+                  <th className="text-right p-4 text-sm font-medium text-gray-600">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {expenseCategories.map(cat => {
+                  const budget = getCategoryBudget(cat.id)
+                  const spent = getMonthSpent(cat.id)
+                  const remaining = budget ? budget.amount - spent : 0
+                  const progress = budget ? (spent / budget.amount) * 100 : 0
+                  const status = budget ? getBudgetStatus(spent, budget.amount) : null
 
-                return (
-                  <tr key={cat.id} className="hover:bg-gray-50">
-                    <td className="p-4 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <span>{cat.icon}</span>
-                        <span>{cat.name}</span>
-                      </div>
-                    </td>
-                    <td className="p-4 text-sm text-right font-medium">
-                      {budget ? `¥${budget.amount.toFixed(2)}` : '-'}
-                    </td>
-                    <td className="p-4 text-sm text-right text-red-600">
-                      ¥{spent.toFixed(2)}
-                    </td>
-                    <td className={`p-4 text-sm text-right font-medium ${remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {budget ? `¥${remaining.toFixed(2)}` : '-'}
-                    </td>
-                    <td className="p-4 text-sm">
-                      {budget ? (
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${progress >= 100 ? 'bg-red-500' : progress >= 80 ? 'bg-orange-500' : 'bg-green-500'}`}
-                            style={{ width: `${Math.min(progress, 100)}%` }}
-                          />
+                  return (
+                    <tr key={cat.id} className="hover:bg-gray-50">
+                      <td className="p-4 text-sm">
+                        <div className="flex items-center space-x-2">
+                          <span>{cat.icon}</span>
+                          <span>{cat.name}</span>
                         </div>
-                      ) : '-'}
-                    </td>
-                    <td className="p-4 text-sm">
-                      {status && (
-                        <div className="flex items-center space-x-1">
-                          {status.icon}
-                          <span className={status.color}>{status.text}</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex justify-end space-x-2">
+                      </td>
+                      <td className="p-4 text-sm text-right font-medium">
+                        {budget ? `¥${budget.amount.toFixed(2)}` : '-'}
+                      </td>
+                      <td className="p-4 text-sm text-right text-red-600">
+                        ¥{spent.toFixed(2)}
+                      </td>
+                      <td className={`p-4 text-sm text-right font-medium ${remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {budget ? `¥${remaining.toFixed(2)}` : '-'}
+                      </td>
+                      <td className="p-4 text-sm">
                         {budget ? (
-                          <>
-                            <button
-                              onClick={() => handleEditBudget(budget)}
-                              className="p-1 text-blue-500 hover:bg-blue-50 rounded"
-                              title="编辑"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteBudget(budget.id)}
-                              className="p-1 text-red-500 hover:bg-red-50 rounded"
-                              title="删除"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setSelectedCategoryId(cat.id)
-                              setShowAddForm(true)
-                            }}
-                            className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                          >
-                            设置
-                          </button>
+                          <div className="progress">
+                            <span
+                              className={`${progress >= 100 ? 'bg-red-500' : progress >= 80 ? 'bg-orange-500' : 'bg-green-500'}`}
+                              style={{ width: `${Math.min(progress, 100)}%` }}
+                            />
+                          </div>
+                        ) : '-'}
+                      </td>
+                      <td className="p-4 text-sm">
+                        {status && (
+                          <div className="flex items-center space-x-1">
+                            {status.icon}
+                            <span className={`text-${status.color}-600`}>{status.text}</span>
+                          </div>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex justify-end space-x-2">
+                          {budget ? (
+                            <>
+                              <button
+                                onClick={() => handleEditBudget(budget)}
+                                className="p-1 text-blue-500 hover:bg-blue-50 rounded"
+                                title="编辑"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteBudget(budget.id)}
+                                className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                title="删除"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setSelectedCategoryId(cat.id)
+                                setShowAddForm(true)
+                              }}
+                              className="btn primary text-xs h-8 px-2"
+                            >
+                              设置
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

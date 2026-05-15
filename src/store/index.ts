@@ -1,4 +1,4 @@
-import { AppState, Transaction, Budget, Account, TransactionCategory } from '../types'
+import type { AppState, TransactionCategory } from '../types'
 
 const STORAGE_KEY = 'personal-finance-data'
 
