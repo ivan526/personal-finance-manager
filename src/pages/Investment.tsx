@@ -16,10 +16,19 @@ const API_BASE = (() => {
 const TRANSACTION_TYPES = [
   { value: 'buy', label: '买入', icon: <ArrowDownRight size={18} />, color: 'text-red-600 bg-red-50' },
   { value: 'sell', label: '卖出', icon: <ArrowUpRight size={18} />, color: 'text-green-600 bg-green-50' },
+  { value: 'invest', label: '定投', icon: <RefreshCw size={18} />, color: 'text-purple-600 bg-purple-50' },
   { value: 'dividend', label: '分红', icon: <Coins size={18} />, color: 'text-green-600 bg-green-50' },
   { value: 'interest', label: '利息', icon: <DollarSign size={18} />, color: 'text-green-600 bg-green-50' },
   { value: 'transfer_in', label: '转入', icon: <ArrowDownRight size={18} />, color: 'text-blue-600 bg-blue-50' },
   { value: 'transfer_out', label: '转出', icon: <ArrowUpRight size={18} />, color: 'text-orange-600 bg-orange-50' },
+] as const
+
+const SCHEDULE_PERIODS = [
+  { value: 'daily', label: '每日' },
+  { value: 'weekly', label: '每周' },
+  { value: 'biweekly', label: '每两周' },
+  { value: 'monthly', label: '每月' },
+  { value: 'quarterly', label: '每季度' },
 ] as const
 
 interface Props {
@@ -46,7 +55,12 @@ export default function Investment({ className }: Props) {
     amount: 0,
     fee: 0,
     time: new Date().toISOString().slice(0, 16),
-    remark: ''
+    remark: '',
+    // 定投相关
+    schedulePeriod: 'monthly' as 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly',
+    scheduleStartDate: new Date().toISOString().slice(0, 10),
+    scheduleEndDate: '',
+    scheduleAmount: 0,
   })
   const [fetchingFund, setFetchingFund] = useState(false)
   const [fundFetchError, setFundFetchError] = useState('')
@@ -153,9 +167,8 @@ export default function Investment({ className }: Props) {
 
   const loadData = () => {
     let transactions = storage.getInvestmentTransactions()
-    const accounts = storage.getAccounts().filter(acc =>
-      ['stock', 'fund', 'bond', 'cryptocurrency', 'other'].includes(acc.type)
-    )
+    // 支持所有类型的账户，不再限制仅投资类账户
+    const accounts = storage.getAccounts()
 
     if (filterAccount !== 'all') {
       transactions = transactions.filter(t => t.accountId === filterAccount)
@@ -380,14 +393,93 @@ export default function Investment({ className }: Props) {
     }
   }
 
+  // 生成定投日期列表
+  const generateScheduleDates = (
+    startDate: string,
+    endDate: string,
+    period: 'weekly' | 'biweekly' | 'monthly' | 'quarterly'
+  ): Date[] => {
+    const dates: Date[] = []
+    const start = new Date(startDate)
+    const end = endDate ? new Date(endDate) : new Date(start.getFullYear() + 1, start.getMonth(), start.getDate())
+    const now = new Date()
+    // 结束日期不能晚于今天（只生成已执行的定投）
+    const effectiveEnd = end < now ? end : now
+
+    const current = new Date(start)
+    while (current <= effectiveEnd) {
+      dates.push(new Date(current))
+      switch (period) {
+        case 'daily':
+          current.setDate(current.getDate() + 1)
+          break
+        case 'weekly':
+          current.setDate(current.getDate() + 7)
+          break
+        case 'biweekly':
+          current.setDate(current.getDate() + 14)
+          break
+        case 'monthly':
+          current.setMonth(current.getMonth() + 1)
+          break
+        case 'quarterly':
+          current.setMonth(current.getMonth() + 3)
+          break
+      }
+    }
+    return dates
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.accountId || !formData.name || !formData.amount || formData.amount <= 0) {
+    if (!formData.accountId || !formData.name) {
       alert('请填写完整信息')
       return
     }
 
-    if (editingTransaction) {
+    // 定投模式
+    if (formData.type === 'invest') {
+      if (!formData.scheduleAmount || formData.scheduleAmount <= 0 || !formData.scheduleStartDate) {
+        alert('请填写定投金额和开始日期')
+        return
+      }
+      const dates = generateScheduleDates(
+        formData.scheduleStartDate,
+        formData.scheduleEndDate,
+        formData.schedulePeriod
+      )
+      if (dates.length === 0) {
+        alert('定投日期范围内没有可生成的期数，请检查开始和结束日期')
+        return
+      }
+      const scheduledId = Date.now().toString()
+      const price = formData.price > 0 ? formData.price : 0
+      const quantity = price > 0 ? formData.scheduleAmount / price : 0
+      const newTransactions: InvestmentTransaction[] = dates.map((date, index) => ({
+        id: `${scheduledId}_${index}`,
+        accountId: formData.accountId,
+        type: 'buy' as const,
+        symbol: formData.symbol,
+        name: formData.name,
+        quantity: parseFloat(quantity.toFixed(4)),
+        price,
+        amount: formData.scheduleAmount,
+        fee: 0,
+        time: date.getTime(),
+        remark: `定投第${index + 1}期`,
+        isScheduled: true,
+        scheduledId,
+        scheduledIndex: index + 1,
+      }))
+      // 批量添加
+      const existing = storage.getInvestmentTransactions()
+      storage.saveInvestmentTransactions([...existing, ...newTransactions])
+      alert(`定投计划已创建，共生成 ${newTransactions.length} 期买入记录`)
+    } else if (editingTransaction) {
+      if (!formData.amount || formData.amount <= 0) {
+        alert('请填写完整信息')
+        return
+      }
       const updated: InvestmentTransaction = {
         ...editingTransaction,
         ...formData,
@@ -396,6 +488,10 @@ export default function Investment({ className }: Props) {
       storage.updateInvestmentTransaction(updated)
       alert('记录更新成功')
     } else {
+      if (!formData.amount || formData.amount <= 0) {
+        alert('请填写完整信息')
+        return
+      }
       const newTransaction: InvestmentTransaction = {
         id: Date.now().toString(),
         ...formData,
@@ -446,7 +542,11 @@ export default function Investment({ className }: Props) {
       amount: 0,
       fee: 0,
       time: new Date().toISOString().slice(0, 16),
-      remark: ''
+      remark: '',
+      schedulePeriod: 'monthly',
+      scheduleStartDate: new Date().toISOString().slice(0, 10),
+      scheduleEndDate: '',
+      scheduleAmount: 0,
     })
   }
 
@@ -724,41 +824,113 @@ export default function Investment({ className }: Props) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>数量</label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={formData.quantity || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-                    style={{borderColor: 'var(--border)'}}
-                  />
+              {/* 定投字段 */}
+              {formData.type === 'invest' ? (
+                <div className="space-y-4 p-4 rounded-sm border" style={{borderColor: 'var(--border)', backgroundColor: 'var(--bg-soft)'}}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <RefreshCw size={16} className="text-purple-600" />
+                    <span className="text-sm font-semibold text-purple-700">定投设置</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>定投周期</label>
+                      <select
+                        value={formData.schedulePeriod}
+                        onChange={(e) => setFormData(prev => ({ ...prev, schedulePeriod: e.target.value as any }))}
+                        className="w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                        style={{borderColor: 'var(--border)'}}
+                      >
+                        {SCHEDULE_PERIODS.map(p => (
+                          <option key={p.value} value={p.value}>{p.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>每期金额（元）</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={formData.scheduleAmount || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, scheduleAmount: parseFloat(e.target.value) || 0 }))}
+                        placeholder="如：500"
+                        className="w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                        style={{borderColor: 'var(--border)'}}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>开始日期</label>
+                      <input
+                        type="date"
+                        value={formData.scheduleStartDate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, scheduleStartDate: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                        style={{borderColor: 'var(--border)'}}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>结束日期（可选）</label>
+                      <input
+                        type="date"
+                        value={formData.scheduleEndDate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, scheduleEndDate: e.target.value }))}
+                        placeholder="留空默认1年"
+                        className="w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                        style={{borderColor: 'var(--border)'}}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>净值（用于估算份额，可选）</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.price || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                      placeholder="如：2.118（从标的代码自动获取）"
+                      className="w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                      style={{borderColor: 'var(--border)'}}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>价格（元）</label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={formData.price || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-                    style={{borderColor: 'var(--border)'}}
-                  />
+              ) : (
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>数量</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.quantity || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                      style={{borderColor: 'var(--border)'}}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>价格（元）</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.price || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                      style={{borderColor: 'var(--border)'}}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>手续费（元）</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.fee || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, fee: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                      style={{borderColor: 'var(--border)'}}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>手续费（元）</label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={formData.fee || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, fee: parseFloat(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-                    style={{borderColor: 'var(--border)'}}
-                  />
-                </div>
-              </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>总金额（元）</label>
@@ -865,10 +1037,17 @@ export default function Investment({ className }: Props) {
                         {getAccountName(transaction.accountId)}
                       </td>
                       <td className="px-5 py-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-fit ${typeInfo.color}`}>
-                          {typeInfo.icon}
-                          {typeInfo.label}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-fit ${typeInfo.color}`}>
+                            {typeInfo.icon}
+                            {typeInfo.label}
+                          </span>
+                          {transaction.isScheduled && transaction.scheduledIndex && (
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-600">
+                              第{transaction.scheduledIndex}期
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-4">
                         <div>

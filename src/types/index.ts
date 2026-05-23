@@ -30,6 +30,7 @@ export type InvestmentTransactionType =
   | 'interest'    // 利息
   | 'transfer_in' // 转入
   | 'transfer_out' // 转出
+  | 'invest'      // 定投
 
 export interface Category {
   id: string
@@ -108,6 +109,10 @@ export interface InvestmentTransaction {
   time: number // 交易时间
   remark?: string
   memberId?: string // 关联家庭成员ID
+  // 定投相关字段
+  isScheduled?: boolean // 是否为定投计划生成的记录
+  scheduledId?: string // 所属定投计划ID
+  scheduledIndex?: number // 定投期数序号
 }
 
 // 持仓信息

@@ -99,6 +99,7 @@ export default function Dashboard({ className }: Props) {
 
     const riskResult: RiskAssessmentResult = JSON.parse(savedRiskResult)
     const recommended = RISK_ALLOCATION_CONFIG[riskResult.riskProfile]
+    if (!recommended) return
 
     // 计算总资产（包含投资市值）
     const totalAssets = getTotalAssets()
