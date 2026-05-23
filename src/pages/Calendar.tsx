@@ -241,19 +241,19 @@ export default function Calendar({ className }: Props) {
     <div className={`animate-fade-in ${className || ''}`}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         {/* 日历部分 */}
-        <div className="lg:col-span-2 bg-white border style={{borderColor: 'var(--border)'}} rounded-[13px] style={{boxShadow: 'var(--shadow)'}} p-8">
+        <div className="lg:col-span-2 bg-white border rounded-[13px] p-8" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <button
                 onClick={prevMonth}
-                className="w-10 h-10 rounded-lg hover:style={{backgroundColor: 'var(--bg-soft)'}} flex items-center justify-center transition-all"
+                className="w-10 h-10 rounded-lg  flex items-center justify-center transition-all"
               >
                 ‹
               </button>
-              <h2 className="text-2xl font-bold style={{color: 'var(--text)'}}">{monthName}</h2>
+              <h2 className="text-2xl font-bold" style={{color: 'var(--text)'}}>{monthName}</h2>
               <button
                 onClick={nextMonth}
-                className="w-10 h-10 rounded-lg hover:style={{backgroundColor: 'var(--bg-soft)'}} flex items-center justify-center transition-all"
+                className="w-10 h-10 rounded-lg  flex items-center justify-center transition-all"
               >
                 ›
               </button>
@@ -268,19 +268,19 @@ export default function Calendar({ className }: Props) {
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-blue-100 border border-blue-500"></div>
-                <span className="style={{color: 'var(--text-muted)'}}">投资</span>
+                <span style={{color: 'var(--text-muted)'}}>投资</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-amber-100 border border-amber-500"></div>
-                <span className="style={{color: 'var(--text-muted)'}}">分红</span>
+                <span style={{color: 'var(--text-muted)'}}>分红</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-red-100 border border-red-500"></div>
-                <span className="style={{color: 'var(--text-muted)'}}">还款</span>
+                <span style={{color: 'var(--text-muted)'}}>还款</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-purple-100 border border-purple-500"></div>
-                <span className="style={{color: 'var(--text-muted)'}}">目标</span>
+                <span style={{color: 'var(--text-muted)'}}>目标</span>
               </div>
             </div>
           </div>
@@ -288,7 +288,7 @@ export default function Calendar({ className }: Props) {
           {/* 星期表头 */}
           <div className="grid grid-cols-7 mb-2">
             {['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map(week => (
-              <div key={week} className="text-center py-2 text-sm font-medium style={{color: 'var(--text-muted)'}}">
+              <div key={week} className="text-center py-2 text-sm font-medium" style={{color: 'var(--text-muted)'}}>
                 {week}
               </div>
             ))}
@@ -338,7 +338,7 @@ export default function Calendar({ className }: Props) {
                       )
                     })}
                     {dayEvents.length > 2 && (
-                      <div className="text-xs style={{color: 'var(--text-muted)'}} pl-1">
+                      <div className="text-xs pl-1" style={{color: 'var(--text-muted)'}}>
                         +{dayEvents.length - 2}更多
                       </div>
                     )}
@@ -350,10 +350,10 @@ export default function Calendar({ className }: Props) {
         </div>
 
         {/* 当日详情 */}
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[13px] style={{boxShadow: 'var(--shadow)'}} p-8">
+        <div className="bg-white border rounded-[13px] p-8" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
           <div className="mb-6">
-            <h3 className="text-xl font-bold style={{color: 'var(--text)'}} flex items-center gap-2">
-              <CalendarIcon size={20} className="style={{color: 'var(--primary)'}}" />
+            <h3 className="text-xl font-bold flex items-center gap-2" style={{color: 'var(--text)'}}>
+              <CalendarIcon size={20} style={{color: 'var(--primary)'}} />
               {selectedDate ? (
                 <span>{selectedDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}</span>
               ) : (
@@ -367,8 +367,8 @@ export default function Calendar({ className }: Props) {
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-50 grid place-items-center">
                 <Clock size={32} className="text-gray-400" />
               </div>
-              <p className="text-lg font-medium style={{color: 'var(--text)'}}">今日没有日程</p>
-              <p className="text-sm style={{color: 'var(--text-muted)'}} mt-1">
+              <p className="text-lg font-medium" style={{color: 'var(--text)'}}>今日没有日程</p>
+              <p className="text-sm mt-1" style={{color: 'var(--text-muted)'}}>
                 还款日、分红、定投等提醒会自动显示在这里
               </p>
             </div>
@@ -387,8 +387,8 @@ export default function Calendar({ className }: Props) {
                           {style.icon}
                         </div>
                         <div>
-                          <h4 className="font-semibold style={{color: 'var(--text)'}}">{event.title}</h4>
-                          <div className="text-xs style={{color: 'var(--text-muted)'}}">
+                          <h4 className="font-semibold" style={{color: 'var(--text)'}}>{event.title}</h4>
+                          <div className="text-xs" style={{color: 'var(--text-muted)'}}>
                             {event.date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
@@ -399,12 +399,12 @@ export default function Calendar({ className }: Props) {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm style={{color: 'var(--text-muted)'}} mb-2">
+                    <p className="text-sm mb-2" style={{color: 'var(--text-muted)'}}>
                       {event.description}
                     </p>
                     {event.amount && (
                       <div className="text-right">
-                        <span className="text-lg font-bold number style={{color: 'var(--text)'}}">
+                        <span className="text-lg font-bold number" style={{color: 'var(--text)'}}>
                           ¥{event.amount.toLocaleString()}
                         </span>
                       </div>
@@ -416,29 +416,29 @@ export default function Calendar({ className }: Props) {
           )}
 
           {/* 统计信息 */}
-          <div className="mt-8 pt-6 border-t style={{borderColor: 'var(--border)'}}">
-            <h4 className="font-semibold style={{color: 'var(--text)'}} mb-4">本月统计</h4>
+          <div className="mt-8 pt-6 border-t" style={{borderColor: 'var(--border)'}}>
+            <h4 className="font-semibold mb-4" style={{color: 'var(--text)'}}>本月统计</h4>
             <div className="space-y-3">
               <div className="flex justify-between items-center text-sm">
-                <span className="style={{color: 'var(--text-muted)'}}">待还款项</span>
+                <span style={{color: 'var(--text-muted)'}}>待还款项</span>
                 <span className="font-medium text-red-600">
                   {events.filter(e => e.type === 'repayment').length} 笔
                 </span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="style={{color: 'var(--text-muted)'}}">分红到账</span>
+                <span style={{color: 'var(--text-muted)'}}>分红到账</span>
                 <span className="font-medium text-amber-600">
                   {events.filter(e => e.type === 'dividend').length} 笔
                 </span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="style={{color: 'var(--text-muted)'}}">定投日</span>
+                <span style={{color: 'var(--text-muted)'}}>定投日</span>
                 <span className="font-medium text-blue-600">
                   {events.filter(e => e.type === 'investment').length} 个
                 </span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="style={{color: 'var(--text-muted)'}}">目标截止</span>
+                <span style={{color: 'var(--text-muted)'}}>目标截止</span>
                 <span className="font-medium text-purple-600">
                   {events.filter(e => e.type === 'goal').length} 个
                 </span>

@@ -219,68 +219,68 @@ export default function Goals({ className }: Props) {
     <div className={`animate-fade-in ${className || ''}`}>
       {/* 统计卡片 */}
       <div className="stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center icon-spin-hover">
-              <Target size={32} className="style={{color: 'var(--primary)'}}" />
+              <Target size={32} style={{color: 'var(--primary)'}} />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">目标总数</div>
-              <div className="text-[35px] font-black style={{color: 'var(--text)'}} mb-6 number leading-none">
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>目标总数</div>
+              <div className="text-[35px] font-black mb-6 number leading-none" style={{color: 'var(--text)'}}>
                 {totalGoals}
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">已完成 {completedGoals} 个</div>
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>已完成 {completedGoals} 个</div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
           </div>
           <div className="absolute right-[-40px] top-[-80px] w-[210px] h-[210px] rounded-full bg-[radial-gradient(circle,rgba(37,99,235,.04),rgba(255,255,255,0)_65%)] pointer-events-none"></div>
         </div>
 
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center icon-bounce-hover">
               <Coins size={32} className="text-purple-600" />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">目标总金额</div>
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>目标总金额</div>
               <div className="text-[35px] font-black text-purple-600 mb-6 number leading-none">
                 ¥{animatedTotalTarget}
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">所有目标合计金额</div>
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>所有目标合计金额</div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
           </div>
           <div className="absolute right-[-40px] top-[-80px] w-[210px] h-[210px] rounded-full bg-[radial-gradient(circle,rgba(139,92,246,.04),rgba(255,255,255,0)_65%)] pointer-events-none"></div>
         </div>
 
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center icon-bounce-hover">
-              <TrendingUp size={32} className="style={{color: 'var(--success)'}}" />
+              <TrendingUp size={32} style={{color: 'var(--success)'}} />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">已储蓄</div>
-              <div className="text-[35px] font-black style={{color: 'var(--success)'}} mb-6 number leading-none">
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>已储蓄</div>
+              <div className="text-[35px] font-black mb-6 number leading-none" style={{color: 'var(--success)'}}>
                 ¥{animatedTotalSaved}
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">当前已存入金额</div>
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>当前已存入金额</div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
           </div>
           <div className="absolute right-[-40px] top-[-80px] w-[210px] h-[210px] rounded-full bg-[radial-gradient(circle,rgba(24,191,95,.04),rgba(255,255,255,0)_65%)] pointer-events-none"></div>
         </div>
 
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center icon-scale-hover">
-              <Target size={32} className="style={{color: 'var(--warning)'}}" />
+              <Target size={32} style={{color: 'var(--warning)'}} />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">总进度</div>
-              <div className="text-[35px] font-black style={{color: 'var(--warning)'}} mb-6 number leading-none">
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>总进度</div>
+              <div className="text-[35px] font-black mb-6 number leading-none" style={{color: 'var(--warning)'}}>
                 {animatedOverallProgress}%
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">整体完成进度</div>
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>整体完成进度</div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
           </div>
@@ -289,9 +289,9 @@ export default function Goals({ className }: Props) {
       </div>
 
       {/* 目标列表 */}
-      <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[13px] style={{boxShadow: 'var(--shadow)'}} overflow-hidden mt-6">
+      <div className="bg-white border rounded-[13px] overflow-hidden mt-6" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
         <div className="h-[75px] flex items-center justify-between px-8 pt-6">
-          <h3 className="text-xl font-extrabold style={{color: 'var(--text)'}}">我的理财目标</h3>
+          <h3 className="text-xl font-extrabold" style={{color: 'var(--text)'}}>我的理财目标</h3>
           <button
             onClick={() => {
               resetForm()
@@ -329,8 +329,8 @@ export default function Goals({ className }: Props) {
                   </defs>
                 </svg>
               </div>
-              <p className="text-xl font-extrabold style={{color: 'var(--text)'}} mt-1">暂无理财目标</p>
-              <p className="text-lg style={{color: 'var(--text-muted)'}} mt-5 font-medium">点击右上角添加您的第一个理财目标吧</p>
+              <p className="text-xl font-extrabold mt-1" style={{color: 'var(--text)'}}>暂无理财目标</p>
+              <p className="text-lg mt-5 font-medium" style={{color: 'var(--text-muted)'}}>点击右上角添加您的第一个理财目标吧</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-6">
@@ -340,7 +340,7 @@ export default function Goals({ className }: Props) {
                 return (
                   <div 
                     key={goal.id} 
-                    className={`glass-card p-4 hover:style={{boxShadow: 'var(--shadow-lg)'}} transition-all relative ${
+                    className={`glass-card p-4  transition-all relative ${
                       goal.isCompleted ? 'opacity-75' : ''
                     }`}
                   >
@@ -353,7 +353,7 @@ export default function Goals({ className }: Props) {
                           {goal.icon}
                         </div>
                         <div>
-                          <div className="font-medium style={{color: 'var(--text)'}} text-lg">{goal.name}</div>
+                          <div className="font-medium text-lg" style={{color: 'var(--text)'}}>{goal.name}</div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1 ${statusInfo.color}`}>
                               {statusInfo.icon}
@@ -373,14 +373,14 @@ export default function Goals({ className }: Props) {
                         <button
                           onClick={() => handleEdit(goal)}
                           aria-label="编辑目标"
-                          className="w-8 h-8 flex items-center justify-center style={{color: 'var(--primary)'}} hover:bg-blue-50 rounded-sm transition-all"
+                          className="w-8 h-8 flex items-center justify-center hover:bg-blue-50 rounded-sm transition-all" style={{color: 'var(--primary)'}}
                         >
                           <Edit2 size={16} aria-hidden="true" />
                         </button>
                         <button
                           onClick={() => handleDelete(goal.id)}
                           aria-label="删除目标"
-                          className="w-8 h-8 flex items-center justify-center style={{color: 'var(--danger)'}} hover:bg-red-50 rounded-sm transition-all"
+                          className="w-8 h-8 flex items-center justify-center hover:bg-red-50 rounded-sm transition-all" style={{color: 'var(--danger)'}}
                         >
                           <Trash2 size={16} aria-hidden="true" />
                         </button>
@@ -390,14 +390,14 @@ export default function Goals({ className }: Props) {
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
                         <div>
-                          <div className="text-sm style={{color: 'var(--text-muted)'}}">目标金额</div>
-                          <div className="text-xl font-bold style={{color: 'var(--text)'}} number">
+                          <div className="text-sm" style={{color: 'var(--text-muted)'}}>目标金额</div>
+                          <div className="text-xl font-bold number" style={{color: 'var(--text)'}}>
                             ¥{goal.targetAmount.toLocaleString()}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm style={{color: 'var(--text-muted)'}}">已存</div>
-                          <div className="text-xl font-bold style={{color: 'var(--primary)'}} number">
+                          <div className="text-sm" style={{color: 'var(--text-muted)'}}>已存</div>
+                          <div className="text-xl font-bold number" style={{color: 'var(--primary)'}}>
                             ¥{goal.currentAmount.toLocaleString()}
                           </div>
                         </div>
@@ -406,10 +406,10 @@ export default function Goals({ className }: Props) {
                       {/* 进度条 */}
                       <div className="relative pt-1">
                         <div className="flex items-center justify-between mb-1">
-                          <div className="text-sm font-medium style={{color: 'var(--text)'}}">
+                          <div className="text-sm font-medium" style={{color: 'var(--text)'}}>
                             进度 {stats.progress.toFixed(1)}%
                           </div>
-                          <div className="text-sm style={{color: 'var(--text-muted)'}} flex items-center gap-1">
+                          <div className="text-sm flex items-center gap-1" style={{color: 'var(--text-muted)'}}>
                             <Calendar size={14} />
                             {stats.remainingDays > 0 
                               ? `剩余 ${stats.remainingDays} 天` 
@@ -449,7 +449,7 @@ export default function Goals({ className }: Props) {
                       )}
 
                       {goal.description && (
-                        <div className="text-sm style={{color: 'var(--text-muted)'}} mt-2">
+                        <div className="text-sm mt-2" style={{color: 'var(--text-muted)'}}>
                           {goal.description}
                         </div>
                       )}
@@ -465,14 +465,14 @@ export default function Goals({ className }: Props) {
       {/* 添加/编辑弹窗 */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-lg style={{boxShadow: 'var(--shadow-lg)'}} max-w-2xl w-full p-6 animate-slide-up max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4 style={{color: 'var(--text)'}}">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 animate-slide-up max-h-[90vh] overflow-y-auto" style={{boxShadow: 'var(--shadow-lg)'}}>
+            <h3 className="text-xl font-bold mb-4" style={{color: 'var(--text)'}}>
               {editingGoal ? '编辑理财目标' : '新增理财目标'}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                     目标名称 *
                   </label>
                   <input
@@ -486,7 +486,7 @@ export default function Goals({ className }: Props) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                     目标图标
                   </label>
                   <div className="grid grid-cols-5 gap-2">
@@ -509,7 +509,7 @@ export default function Goals({ className }: Props) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                     目标颜色
                   </label>
                   <div className="grid grid-cols-8 gap-2">
@@ -530,7 +530,7 @@ export default function Goals({ className }: Props) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                     截止日期 *
                   </label>
                   <input
@@ -543,7 +543,7 @@ export default function Goals({ className }: Props) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                     目标总金额 *
                   </label>
                   <input
@@ -559,7 +559,7 @@ export default function Goals({ className }: Props) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                     当前已存金额
                   </label>
                   <input
@@ -575,7 +575,7 @@ export default function Goals({ className }: Props) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                   目标描述（可选）
                 </label>
                 <textarea
@@ -593,7 +593,7 @@ export default function Goals({ className }: Props) {
                     setShowAddModal(false)
                     setEditingGoal(null)
                   }}
-                  className="flex-1 px-4 py-2.5 border style={{borderColor: 'var(--border)'}} rounded-sm hover:style={{backgroundColor: 'var(--bg-soft)'}} transition-all style={{color: 'var(--text)'}}"
+                  className="flex-1 px-4 py-2.5 border rounded-sm  transition-all" style={{borderColor: 'var(--border)', color: 'var(--text)'}}
                 >
                   取消
                 </button>

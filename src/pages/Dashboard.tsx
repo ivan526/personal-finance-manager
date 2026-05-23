@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { TrendingUp, Wallet, AlertTriangle, ArrowRightLeft, AlertCircle, ArrowRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { storage } from '../utils/storage'
+import { getTotalAssets } from '../utils/calculations'
 import type { MonthData, RiskAssessmentResult } from '../types'
 import * as echarts from 'echarts'
 import { useNumberAnimation, formatCurrency } from '../hooks/useNumberAnimation'
@@ -74,6 +75,7 @@ export default function Dashboard({ className }: Props) {
   const animatedIncome = useNumberAnimation(totalIncome, 1500, formatCurrency)
   const animatedExpense = useNumberAnimation(totalExpense, 1500, formatCurrency)
   const animatedBalance = useNumberAnimation(totalBalance, 1500, formatCurrency)
+  const animatedTotalAssets = useNumberAnimation(getTotalAssets(), 1500, formatCurrency)
   const animatedSavingRate = useNumberAnimation(
     totalIncome > 0 ? ((totalBalance / totalIncome) * 100) : 0, 
     1500, 
@@ -98,11 +100,8 @@ export default function Dashboard({ className }: Props) {
     const riskResult: RiskAssessmentResult = JSON.parse(savedRiskResult)
     const recommended = RISK_ALLOCATION_CONFIG[riskResult.riskProfile]
 
-    // 计算总资产
-    const totalAssets = accounts.reduce((sum, acc) => {
-      const rate = DEFAULT_EXCHANGE_RATES[acc.currency || 'CNY'] || 1
-      return sum + acc.balance * rate
-    }, 0)
+    // 计算总资产（包含投资市值）
+    const totalAssets = getTotalAssets()
 
     if (totalAssets === 0) return
 
@@ -309,7 +308,7 @@ export default function Dashboard({ className }: Props) {
     <div className={`animate-fade-in ${className || ''}`}>
       {/* 资产再平衡提醒 */}
       {rebalanceAlert.show && (
-        <div className="mt-8 bg-amber-50 border border-amber-200 rounded-[14px] p-6 style={{boxShadow: 'var(--shadow)'}}">
+        <div className="mt-8 bg-amber-50 border border-amber-200 rounded-[14px] p-6" style={{boxShadow: 'var(--shadow)'}}>
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
               <AlertCircle size={24} className="text-amber-600" />
@@ -324,7 +323,7 @@ export default function Dashboard({ className }: Props) {
               <p className="text-amber-800 mb-3">{rebalanceAlert.message}</p>
               <button 
                 onClick={() => navigate('/analysis?tab=asset')}
-                className="flex items-center gap-1 style={{color: 'var(--primary)'}} font-medium hover:underline transition-all group"
+                className="flex items-center gap-1 font-medium hover:underline transition-all group" style={{color: 'var(--primary)'}}
               >
                 查看详细配置建议 
                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-all" />
@@ -336,35 +335,35 @@ export default function Dashboard({ className }: Props) {
 
       {/* 统计卡片 */}
       <div className={`stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${rebalanceAlert.show ? 'mt-6' : 'mt-8'}`}>
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden hover-lift">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden hover-lift" style={{boxShadow: 'var(--shadow)', borderColor: 'var(--border)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center icon-spin-hover">
-              <Wallet size={32} className="style={{color: 'var(--primary)'}}" />
+              <Wallet size={32} style={{color: 'var(--primary)'}} />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">总资产</div>
-              <div className="text-[35px] font-black style={{color: 'var(--text)'}} mb-6 number leading-none">
-                ¥{animatedBalance}
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>总资产</div>
+              <div className="text-[35px] font-black mb-6 number leading-none" style={{color: 'var(--text)'}}>
+                ¥{animatedTotalAssets}
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">总收入 - 总支出</div>
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>账户余额 + 投资市值</div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
           </div>
           <div className="absolute right-[-40px] top-[-80px] w-[210px] h-[210px] rounded-full bg-[radial-gradient(circle,rgba(37,99,235,.04),rgba(255,255,255,0)_65%)] pointer-events-none"></div>
         </div>
 
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden hover-lift">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden hover-lift" style={{boxShadow: 'var(--shadow)', borderColor: 'var(--border)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center icon-bounce-hover">
-              <TrendingUp size={32} className="style={{color: 'var(--success)'}}" />
+              <TrendingUp size={32} style={{color: 'var(--success)'}} />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">累计收入</div>
-              <div className="text-[35px] font-black style={{color: 'var(--success)'}} mb-6 number leading-none">
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>累计收入</div>
+              <div className="text-[35px] font-black mb-6 number leading-none" style={{color: 'var(--success)'}}>
                 ¥{animatedIncome}
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">
-                <span className="style={{color: 'var(--success)'}}">+{totalIncome > 0 ? ((totalIncome / (totalIncome + totalExpense)) * 100).toFixed(1) : 0}%</span> 收入占比
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>
+                <span style={{color: 'var(--success)'}}>+{totalIncome > 0 ? ((totalIncome / (totalIncome + totalExpense)) * 100).toFixed(1) : 0}%</span> 收入占比
               </div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
@@ -372,38 +371,36 @@ export default function Dashboard({ className }: Props) {
           <div className="absolute right-[-40px] top-[-80px] w-[210px] h-[210px] rounded-full bg-[radial-gradient(circle,rgba(24,191,95,.04),rgba(255,255,255,0)_65%)] pointer-events-none"></div>
         </div>
 
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden hover-lift">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden hover-lift" style={{boxShadow: 'var(--shadow)', borderColor: 'var(--border)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center icon-spin-hover">
-              <ArrowRightLeft size={32} className="style={{color: 'var(--danger)'}}" />
+              <ArrowRightLeft size={32} style={{color: 'var(--danger)'}} />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">总支出</div>
-              <div className="text-[35px] font-black style={{color: 'var(--danger)'}} mb-6 number leading-none">
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>总支出</div>
+              <div className="text-[35px] font-black mb-6 number leading-none" style={{color: 'var(--danger)'}}>
                 ¥{animatedExpense}
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">所有记录的支出总和</div>
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>所有记录的支出总和</div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
           </div>
           <div className="absolute right-[-40px] top-[-80px] w-[210px] h-[210px] rounded-full bg-[radial-gradient(circle,rgba(248,59,77,.04),rgba(255,255,255,0)_65%)] pointer-events-none"></div>
         </div>
 
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden hover-lift">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden hover-lift" style={{boxShadow: 'var(--shadow)', borderColor: 'var(--border)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center icon-bounce-hover">
-              <AlertTriangle size={32} className="style={{color: 'var(--warning)'}}" />
+              <AlertTriangle size={32} style={{color: 'var(--warning)'}} />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">结余率</div>
-              <div className={`text-[35px] font-black mb-6 number leading-none ${
-                (totalIncome > 0 && (totalBalance / totalIncome) * 100 >= 30) 
-                  ? 'style={{color: 'var(--success)'}}' 
-                  : 'style={{color: 'var(--warning)'}}'
-              }`}>
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>结余率</div>
+              <div className="text-[35px] font-black mb-6 number leading-none" style={{
+                color: (totalIncome > 0 && (totalBalance / totalIncome) * 100 >= 30) ? 'var(--success)' : 'var(--warning)'
+              }}>
                 {animatedSavingRate}%
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">建议结余率 ≥ 30%</div>
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>建议结余率 ≥ 30%</div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
           </div>
@@ -413,43 +410,43 @@ export default function Dashboard({ className }: Props) {
 
       {/* 趋势图 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[13px] style={{boxShadow: 'var(--shadow)'}} p-8">
+        <div className="bg-white border rounded-[13px] p-8" style={{boxShadow: 'var(--shadow)', borderColor: 'var(--border)'}}>
           <div className="mb-5">
-            <h3 className="text-lg font-semibold style={{color: 'var(--text)'}}">近6个月收支趋势</h3>
-            <p className="text-sm style={{color: 'var(--text-muted)'}} mt-1">收入支出对比折线图</p>
+            <h3 className="text-lg font-semibold" style={{color: 'var(--text)'}}>近6个月收支趋势</h3>
+            <p className="text-sm mt-1" style={{color: 'var(--text-muted)'}}>收入支出对比折线图</p>
           </div>
           <div id="trendChart" className="h-[300px]"></div>
         </div>
 
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[13px] style={{boxShadow: 'var(--shadow)'}} p-8">
+        <div className="bg-white border rounded-[13px] p-8" style={{boxShadow: 'var(--shadow)', borderColor: 'var(--border)'}}>
           <div className="mb-5">
-            <h3 className="text-lg font-semibold style={{color: 'var(--text)'}}">快速操作</h3>
-            <p className="text-sm style={{color: 'var(--text-muted)'}} mt-1">常用功能快捷入口</p>
+            <h3 className="text-lg font-semibold" style={{color: 'var(--text)'}}>快速操作</h3>
+            <p className="text-sm mt-1" style={{color: 'var(--text-muted)'}}>常用功能快捷入口</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <button 
-              className="p-4 bg-blue-50 border border-blue-100 rounded-sm text-left hover:style={{boxShadow: 'var(--shadow)'}} transition-all group"
+              className="p-4 bg-blue-50 border border-blue-100 rounded-sm text-left transition-all group" style={{boxShadow: 'var(--shadow)'}}
               onClick={() => window.dispatchEvent(new CustomEvent('openAddTransactionModal'))}
             >
               <div className="text-base font-semibold text-blue-700 group-hover:translate-x-1 transition-all">➕ 记一笔</div>
               <div className="text-xs text-blue-600 mt-1">快速记录收支</div>
             </button>
             <button 
-              className="p-4 bg-green-50 border border-green-100 rounded-sm text-left hover:style={{boxShadow: 'var(--shadow)'}} transition-all group"
+              className="p-4 bg-green-50 border border-green-100 rounded-sm text-left transition-all group" style={{boxShadow: 'var(--shadow)'}}
               onClick={() => navigate('/analysis')}
             >
               <div className="text-base font-semibold text-green-700 group-hover:translate-x-1 transition-all">📊 查看报告</div>
               <div className="text-xs text-green-600 mt-1">月度消费分析</div>
             </button>
             <button 
-              className="p-4 bg-purple-50 border border-purple-100 rounded-sm text-left hover:style={{boxShadow: 'var(--shadow)'}} transition-all group"
+              className="p-4 bg-purple-50 border border-purple-100 rounded-sm text-left transition-all group" style={{boxShadow: 'var(--shadow)'}}
               onClick={() => navigate('/assets')}
             >
               <div className="text-base font-semibold text-purple-700 group-hover:translate-x-1 transition-all">💰 账户管理</div>
               <div className="text-xs text-purple-600 mt-1">添加资产账户</div>
             </button>
             <button 
-              className="p-4 bg-amber-50 border border-amber-100 rounded-sm text-left hover:style={{boxShadow: 'var(--shadow)'}} transition-all group"
+              className="p-4 bg-amber-50 border border-amber-100 rounded-sm text-left transition-all group" style={{boxShadow: 'var(--shadow)'}}
               onClick={() => navigate('/budget')}
             >
               <div className="text-base font-semibold text-amber-700 group-hover:translate-x-1 transition-all">⚙️ 设置预算</div>

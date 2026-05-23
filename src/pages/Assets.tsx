@@ -6,31 +6,32 @@ import {
 } from 'lucide-react'
 import type { Account, Liability, InvestmentTransaction, AssetHistory } from '../types'
 import { storage } from '../utils/storage'
+import { getTotalAssets, getTotalLiabilities, calculateInvestmentValue } from '../utils/calculations'
 import * as echarts from 'echarts'
 import { useNumberAnimation, formatCurrency } from '../hooks/useNumberAnimation'
 import { useTheme } from '../hooks/useTheme'
 import { CURRENCIES, DEFAULT_EXCHANGE_RATES } from '../constants/currencies'
 
 const ACCOUNT_TYPES = [
-  { value: 'cash', label: '现金', icon: <Banknote size={18} aria-hidden="true" />, color: 'bg-green-50 style={{color: 'var(--success)'}}' },
-  { value: 'bank', label: '银行卡', icon: <Landmark size={18} aria-hidden="true" />, color: 'bg-blue-50 style={{color: 'var(--primary)'}}' },
-  { value: 'alipay', label: '支付宝', icon: <CreditCard size={18} aria-hidden="true" />, color: 'bg-blue-50 style={{color: 'var(--primary)'}}' },
-  { value: 'wechat', label: '微信钱包', icon: <Wallet size={18} aria-hidden="true" />, color: 'bg-green-50 style={{color: 'var(--success)'}}' },
+  { value: 'cash', label: '现金', icon: <Banknote size={18} aria-hidden="true" />, color: 'bg-green-50' },
+  { value: 'bank', label: '银行卡', icon: <Landmark size={18} aria-hidden="true" />, color: 'bg-blue-50' },
+  { value: 'alipay', label: '支付宝', icon: <CreditCard size={18} aria-hidden="true" />, color: 'bg-blue-50' },
+  { value: 'wechat', label: '微信钱包', icon: <Wallet size={18} aria-hidden="true" />, color: 'bg-green-50' },
   { value: 'stock', label: '股票账户', icon: <TrendingUp size={18} aria-hidden="true" />, color: 'bg-purple-50 text-purple-600' },
   { value: 'fund', label: '基金账户', icon: <TrendingUp size={18} aria-hidden="true" />, color: 'bg-purple-50 text-purple-600' },
-  { value: 'bond', label: '债券', icon: <Coins size={18} aria-hidden="true" />, color: 'bg-amber-50 style={{color: 'var(--warning)'}}' },
-  { value: 'real_estate', label: '房产', icon: <Home size={18} aria-hidden="true" />, color: 'bg-red-50 style={{color: 'var(--danger)'}}' },
-  { value: 'gold', label: '贵金属', icon: <Coins size={18} aria-hidden="true" />, color: 'bg-amber-50 style={{color: 'var(--warning)'}}' },
-  { value: 'cryptocurrency', label: '加密货币', icon: <DollarSign size={18} aria-hidden="true" />, color: 'bg-blue-50 style={{color: 'var(--primary)'}}' },
-  { value: 'other', label: '其他账户', icon: <MoreHorizontal size={18} aria-hidden="true" />, color: 'bg-gray-50 style={{color: 'var(--text-muted)'}}' },
+  { value: 'bond', label: '债券', icon: <Coins size={18} aria-hidden="true" />, color: 'bg-amber-50' },
+  { value: 'real_estate', label: '房产', icon: <Home size={18} aria-hidden="true" />, color: 'bg-red-50' },
+  { value: 'gold', label: '贵金属', icon: <Coins size={18} aria-hidden="true" />, color: 'bg-amber-50' },
+  { value: 'cryptocurrency', label: '加密货币', icon: <DollarSign size={18} aria-hidden="true" />, color: 'bg-blue-50' },
+  { value: 'other', label: '其他账户', icon: <MoreHorizontal size={18} aria-hidden="true" />, color: 'bg-gray-50' },
 ] as const
 
 const LIABILITY_TYPES = [
-  { value: 'credit_card', label: '信用卡', icon: <CreditCard size={18} aria-hidden="true" />, color: 'bg-red-50 style={{color: 'var(--danger)'}}' },
-  { value: 'mortgage', label: '房贷', icon: <Home size={18} aria-hidden="true" />, color: 'bg-red-50 style={{color: 'var(--danger)'}}' },
-  { value: 'car_loan', label: '车贷', icon: <LoanIcon size={18} aria-hidden="true" />, color: 'bg-red-50 style={{color: 'var(--danger)'}}' },
-  { value: 'personal_loan', label: '个人贷款', icon: <LoanIcon size={18} aria-hidden="true" />, color: 'bg-red-50 style={{color: 'var(--danger)'}}' },
-  { value: 'other_loan', label: '其他负债', icon: <LoanIcon size={18} aria-hidden="true" />, color: 'bg-red-50 style={{color: 'var(--danger)'}}' },
+  { value: 'credit_card', label: '信用卡', icon: <CreditCard size={18} aria-hidden="true" />, color: 'bg-red-50' },
+  { value: 'mortgage', label: '房贷', icon: <Home size={18} aria-hidden="true" />, color: 'bg-red-50' },
+  { value: 'car_loan', label: '车贷', icon: <LoanIcon size={18} aria-hidden="true" />, color: 'bg-red-50' },
+  { value: 'personal_loan', label: '个人贷款', icon: <LoanIcon size={18} aria-hidden="true" />, color: 'bg-red-50' },
+  { value: 'other_loan', label: '其他负债', icon: <LoanIcon size={18} aria-hidden="true" />, color: 'bg-red-50' },
 ] as const
 
 interface Props {
@@ -211,11 +212,36 @@ export default function Assets({ className }: Props) {
     }
   }, [accounts, liabilities])
 
+  // 计算投资持仓市值（从投资交易记录中汇总）
+  const calculateInvestmentValue = () => {
+    const positionMap: Record<string, { quantity: number; cost: number }> = {}
+    investmentTransactions.forEach(t => {
+      const key = t.symbol || t.name
+      if (!positionMap[key]) {
+        positionMap[key] = { quantity: 0, cost: 0 }
+      }
+      if (t.type === 'buy' || t.type === 'transfer_in') {
+        positionMap[key].quantity += t.quantity
+        positionMap[key].cost += t.amount + t.fee
+      } else if (t.type === 'sell' || t.type === 'transfer_out') {
+        positionMap[key].quantity -= t.quantity
+      }
+    })
+    // 持仓市值：用平均成本估算（实时净值需要接口查询，这里用成本价）
+    return Object.values(positionMap).reduce((sum, pos) => {
+      if (pos.quantity > 0 && pos.cost > 0) {
+        return sum + pos.cost
+      }
+      return sum
+    }, 0)
+  }
+  const investmentValue = calculateInvestmentValue()
+
   // 计算核心指标（统一换算为人民币）
   const totalAssets = accounts.reduce((sum, account) => {
     const rate = DEFAULT_EXCHANGE_RATES[account.currency || 'CNY'] || 1
     return sum + account.balance * rate
-  }, 0)
+  }, 0) + investmentValue
   const totalLiabilities = liabilities.reduce((sum, liability) => sum + liability.balance, 0)
   const netWorth = totalAssets - totalLiabilities
   
@@ -384,68 +410,68 @@ export default function Assets({ className }: Props) {
     <div className={`animate-fade-in ${className || ''}`}>
       {/* 核心指标卡片 */}
       <div className="stats-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center icon-scale-hover">
-              <Wallet size={32} className="style={{color: 'var(--primary)'}}" />
+              <Wallet size={32} style={{color: 'var(--primary)'}} />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">总资产</div>
-              <div className="text-[35px] font-black style={{color: 'var(--text)'}} mb-6 number leading-none">
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>总资产</div>
+              <div className="text-[35px] font-black mb-6 number leading-none" style={{color: 'var(--text)'}}>
                 ¥{animatedTotalAssets}
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">共 {accounts.length} 个账户</div>
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>共 {accounts.length} 个账户</div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
           </div>
           <div className="absolute right-[-40px] top-[-80px] w-[210px] h-[210px] rounded-full bg-[radial-gradient(circle,rgba(37,99,235,.04),rgba(255,255,255,0)_65%)] pointer-events-none"></div>
         </div>
 
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center icon-spin-hover">
-              <TrendingDown size={32} className="style={{color: 'var(--danger)'}}" />
+              <TrendingDown size={32} style={{color: 'var(--danger)'}} />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">总负债</div>
-              <div className="text-[35px] font-black style={{color: 'var(--danger)'}} mb-6 number leading-none">
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>总负债</div>
+              <div className="text-[35px] font-black mb-6 number leading-none" style={{color: 'var(--danger)'}}>
                 ¥{animatedTotalLiabilities}
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">共 {liabilities.length} 项负债</div>
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>共 {liabilities.length} 项负债</div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
           </div>
           <div className="absolute right-[-40px] top-[-80px] w-[210px] h-[210px] rounded-full bg-[radial-gradient(circle,rgba(248,59,77,.04),rgba(255,255,255,0)_65%)] pointer-events-none"></div>
         </div>
 
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center icon-bounce-hover">
-              <TrendingUp size={32} className="style={{color: 'var(--success)'}}" />
+              <TrendingUp size={32} style={{color: 'var(--success)'}} />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">净资产</div>
-              <div className={`text-[35px] font-black mb-6 number leading-none ${netWorth >= 0 ? 'style={{color: 'var(--success)'}}' : 'style={{color: 'var(--danger)'}}'}`}>
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>净资产</div>
+              <div className="text-[35px] font-black mb-6 number leading-none" style={{color: netWorth >= 0 ? 'var(--success)' : 'var(--danger)'}}>
                 ¥{animatedNetWorth}
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">总资产 - 总负债</div>
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>总资产 - 总负债</div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
           </div>
           <div className="absolute right-[-40px] top-[-80px] w-[210px] h-[210px] rounded-full bg-[radial-gradient(circle,rgba(24,191,95,.04),rgba(255,255,255,0)_65%)] pointer-events-none"></div>
         </div>
 
-        <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[14px] style={{boxShadow: 'var(--shadow)'}} p-8 relative overflow-hidden">
+        <div className="bg-white border rounded-[14px] p-8 relative overflow-hidden" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
           <div className="grid grid-cols-[78px_1fr_auto] items-center">
             <div className="w-[66px] h-[66px] rounded-[14px] bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center icon-scale-hover">
-              <TrendingUp size={32} className="style={{color: 'var(--warning)'}}" />
+              <TrendingUp size={32} style={{color: 'var(--warning)'}} />
             </div>
             <div className="pl-2">
-              <div className="text-lg font-extrabold style={{color: 'var(--text)'}} mb-4">投资收益</div>
-              <div className={`text-[35px] font-black mb-6 number leading-none ${investmentProfit >= 0 ? 'style={{color: 'var(--warning)'}}' : 'style={{color: 'var(--danger)'}}'}`}>
+              <div className="text-lg font-extrabold mb-4" style={{color: 'var(--text)'}}>投资收益</div>
+              <div className="text-[35px] font-black mb-6 number leading-none" style={{color: investmentProfit >= 0 ? 'var(--warning)' : 'var(--danger)'}}>
                 {investmentProfit >= 0 ? '+' : ''}¥{animatedInvestmentProfit}
               </div>
-              <div className="text-base font-semibold style={{color: 'var(--text-muted)'}}">累计收益</div>
+              <div className="text-base font-semibold" style={{color: 'var(--text-muted)'}}>累计收益</div>
             </div>
             <div className="self-end justify-self-end mb-1"></div>
           </div>
@@ -454,47 +480,50 @@ export default function Assets({ className }: Props) {
       </div>
 
       {/* 资产/负债/走势卡片 */}
-      <div className="bg-white border style={{borderColor: 'var(--border)'}} rounded-[13px] style={{boxShadow: 'var(--shadow)'}} overflow-hidden mt-6">
+      <div className="bg-white border rounded-[13px] overflow-hidden mt-6" style={{borderColor: 'var(--border)', boxShadow: 'var(--shadow)'}}>
         {/* 头部tab区域 */}
         <div className="h-[75px] flex items-start justify-between px-8 pt-6">
           <div className="flex gap-14 h-[50px] items-start">
             <button
               onClick={() => setActiveTab('assets')}
               className={`relative text-xl font-bold transition-all pb-4 ${
-                activeTab === 'assets' 
-                  ? 'style={{color: 'var(--primary)'}} font-black' 
-                  : 'style={{color: 'var(--text-muted)'}} hover:style={{color: 'var(--text)'}}'
+                activeTab === 'assets'
+                  ? 'font-black'
+                  : ''
               }`}
+              style={{color: activeTab === 'assets' ? 'var(--primary)' : 'var(--text-muted)'}}
             >
               资产账户
               {activeTab === 'assets' && (
-                <span className="absolute left-0 right-0 bottom-[-18px] h-[3px] rounded-[2px] style={{backgroundColor: 'var(--primary)'}}"></span>
+                <span className="absolute left-0 right-0 bottom-[-18px] h-[3px] rounded-[2px]" style={{backgroundColor: 'var(--primary)'}}></span>
               )}
             </button>
             <button
               onClick={() => setActiveTab('liabilities')}
               className={`relative text-xl font-bold transition-all pb-4 ${
-                activeTab === 'liabilities' 
-                  ? 'style={{color: 'var(--primary)'}} font-black' 
-                  : 'style={{color: 'var(--text-muted)'}} hover:style={{color: 'var(--text)'}}'
+                activeTab === 'liabilities'
+                  ? 'font-black'
+                  : ''
               }`}
+              style={{color: activeTab === 'liabilities' ? 'var(--primary)' : 'var(--text-muted)'}}
             >
               负债管理
               {activeTab === 'liabilities' && (
-                <span className="absolute left-0 right-0 bottom-[-18px] h-[3px] rounded-[2px] style={{backgroundColor: 'var(--primary)'}}"></span>
+                <span className="absolute left-0 right-0 bottom-[-18px] h-[3px] rounded-[2px]" style={{backgroundColor: 'var(--primary)'}}></span>
               )}
             </button>
             <button
               onClick={() => setActiveTab('trend')}
               className={`relative text-xl font-bold transition-all pb-4 ${
-                activeTab === 'trend' 
-                  ? 'style={{color: 'var(--primary)'}} font-black' 
-                  : 'style={{color: 'var(--text-muted)'}} hover:style={{color: 'var(--text)'}}'
+                activeTab === 'trend'
+                  ? 'font-black'
+                  : ''
               }`}
+              style={{color: activeTab === 'trend' ? 'var(--primary)' : 'var(--text-muted)'}}
             >
               资产走势
               {activeTab === 'trend' && (
-                <span className="absolute left-0 right-0 bottom-[-18px] h-[3px] rounded-[2px] style={{backgroundColor: 'var(--primary)'}}"></span>
+                <span className="absolute left-0 right-0 bottom-[-18px] h-[3px] rounded-[2px]" style={{backgroundColor: 'var(--primary)'}}></span>
               )}
             </button>
           </div>
@@ -522,15 +551,15 @@ export default function Assets({ className }: Props) {
             {accounts.map(account => {
               const typeInfo = getAccountTypeInfo(account.type)
               return (
-                <div key={account.id} className="glass-card p-4 hover:style={{boxShadow: 'var(--shadow-lg)'}} transition-all">
+                <div key={account.id} className="glass-card p-4  transition-all">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-sm ${typeInfo.color} grid place-items-center`}>
                         {typeInfo.icon}
                       </div>
                    <div>
-                     <div className="font-medium style={{color: 'var(--text)'}}">{account.name}</div>
-                     <div className="text-xs style={{color: 'var(--text-muted)'}}">
+                     <div className="font-medium" style={{color: 'var(--text)'}}>{account.name}</div>
+                     <div className="text-xs" style={{color: 'var(--text-muted)'}}>
                        {typeInfo.label} · {account.currency || 'CNY'}
                      </div>
                    </div>
@@ -539,22 +568,22 @@ export default function Assets({ className }: Props) {
                        <button
                          onClick={() => handleEdit(account)}
                          aria-label="编辑账户"
-                         className="w-10 h-10 flex items-center justify-center style={{color: 'var(--primary)'}} hover:bg-blue-50 rounded-sm transition-all"
+                         className="w-10 h-10 flex items-center justify-center hover:bg-blue-50 rounded-sm transition-all" style={{color: 'var(--primary)'}}
                        >
                          <Edit2 size={18} aria-hidden="true" />
                        </button>
                        <button
                          onClick={() => handleDelete(account.id, 'account')}
                          aria-label="删除账户"
-                         className="w-10 h-10 flex items-center justify-center style={{color: 'var(--danger)'}} hover:bg-red-50 rounded-sm transition-all"
+                         className="w-10 h-10 flex items-center justify-center hover:bg-red-50 rounded-sm transition-all" style={{color: 'var(--danger)'}}
                        >
                          <Trash2 size={18} aria-hidden="true" />
                        </button>
                      </div>
                   </div>
                   <div>
-                    <div className="text-sm style={{color: 'var(--text-muted)'}} mb-1">账户余额</div>
-                     <div className="text-2xl font-bold style={{color: 'var(--text)'}} number">
+                    <div className="text-sm mb-1" style={{color: 'var(--text-muted)'}}>账户余额</div>
+                     <div className="text-2xl font-bold number" style={{color: 'var(--text)'}}>
                        {account.currency === 'USD' ? '$' : 
                         account.currency === 'EUR' ? '€' : 
                         account.currency === 'GBP' ? '£' : 
@@ -591,8 +620,8 @@ export default function Assets({ className }: Props) {
                     </defs>
                   </svg>
                 </div>
-                <p className="text-xl font-extrabold style={{color: 'var(--text)'}} mt-1">暂无资产账户</p>
-                <p className="text-lg style={{color: 'var(--text-muted)'}} mt-5 font-medium">点击右上角添加您的第一个资产账户吧</p>
+                <p className="text-xl font-extrabold mt-1" style={{color: 'var(--text)'}}>暂无资产账户</p>
+                <p className="text-lg mt-5 font-medium" style={{color: 'var(--text-muted)'}}>点击右上角添加您的第一个资产账户吧</p>
               </div>
             )}
           </div>
@@ -601,29 +630,29 @@ export default function Assets({ className }: Props) {
             {liabilities.map(liability => {
               const typeInfo = getLiabilityTypeInfo(liability.type)
               return (
-                <div key={liability.id} className="glass-card p-4 hover:style={{boxShadow: 'var(--shadow-lg)'}} transition-all">
+                <div key={liability.id} className="glass-card p-4  transition-all">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-sm ${typeInfo.color} grid place-items-center`}>
                         {typeInfo.icon}
                       </div>
                       <div>
-                        <div className="font-medium style={{color: 'var(--text)'}}">{liability.name}</div>
-                        <div className="text-xs style={{color: 'var(--text-muted)'}}">{typeInfo.label}</div>
+                        <div className="font-medium" style={{color: 'var(--text)'}}>{liability.name}</div>
+                        <div className="text-xs" style={{color: 'var(--text-muted)'}}>{typeInfo.label}</div>
                       </div>
                     </div>
                      <div className="flex gap-2">
                        <button
                          onClick={() => handleEdit(liability)}
                          aria-label="编辑负债"
-                         className="w-10 h-10 flex items-center justify-center style={{color: 'var(--primary)'}} hover:bg-blue-50 rounded-sm transition-all"
+                         className="w-10 h-10 flex items-center justify-center hover:bg-blue-50 rounded-sm transition-all" style={{color: 'var(--primary)'}}
                        >
                          <Edit2 size={18} aria-hidden="true" />
                        </button>
                        <button
                          onClick={() => handleDelete(liability.id, 'liability')}
                          aria-label="删除负债"
-                         className="w-10 h-10 flex items-center justify-center style={{color: 'var(--danger)'}} hover:bg-red-50 rounded-sm transition-all"
+                         className="w-10 h-10 flex items-center justify-center hover:bg-red-50 rounded-sm transition-all" style={{color: 'var(--danger)'}}
                        >
                          <Trash2 size={18} aria-hidden="true" />
                        </button>
@@ -631,12 +660,12 @@ export default function Assets({ className }: Props) {
                   </div>
                   <div className="space-y-2">
                     <div>
-                      <div className="text-sm style={{color: 'var(--text-muted)'}} mb-1">待还金额</div>
-                      <div className="text-xl font-bold style={{color: 'var(--danger)'}} number">
+                      <div className="text-sm mb-1" style={{color: 'var(--text-muted)'}}>待还金额</div>
+                      <div className="text-xl font-bold number" style={{color: 'var(--danger)'}}>
                         ¥{liability.balance.toLocaleString()}
                       </div>
                     </div>
-                    <div className="flex justify-between text-xs style={{color: 'var(--text-muted)'}}">
+                    <div className="flex justify-between text-xs" style={{color: 'var(--text-muted)'}}>
                       <span>总额: ¥{liability.amount.toLocaleString()}</span>
                       <span>利率: {liability.interestRate}%</span>
                     </div>
@@ -668,8 +697,8 @@ export default function Assets({ className }: Props) {
                     </defs>
                   </svg>
                 </div>
-                <p className="text-xl font-extrabold style={{color: 'var(--text)'}} mt-1">暂无负债记录</p>
-                <p className="text-lg style={{color: 'var(--text-muted)'}} mt-5 font-medium">添加负债可以更准确地计算您的净资产</p>
+                <p className="text-xl font-extrabold mt-1" style={{color: 'var(--text)'}}>暂无负债记录</p>
+                <p className="text-lg mt-5 font-medium" style={{color: 'var(--text-muted)'}}>添加负债可以更准确地计算您的净资产</p>
               </div>
             )}
           </div>
@@ -677,8 +706,8 @@ export default function Assets({ className }: Props) {
           // 资产走势页面
           <div className="pt-6">
             <div className="mb-5">
-              <h3 className="text-lg font-semibold style={{color: 'var(--text)'}}">净资产走势</h3>
-              <p className="text-sm style={{color: 'var(--text-muted)'}} mt-1">近6个月资产、负债、净资产变化趋势</p>
+              <h3 className="text-lg font-semibold" style={{color: 'var(--text)'}}>净资产走势</h3>
+              <p className="text-sm mt-1" style={{color: 'var(--text-muted)'}}>近6个月资产、负债、净资产变化趋势</p>
             </div>
             <div id="netWorthChart" className="h-[400px]"></div>
           </div>
@@ -689,8 +718,8 @@ export default function Assets({ className }: Props) {
       {/* 添加/编辑弹窗 */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-lg style={{boxShadow: 'var(--shadow-lg)'}} max-w-md w-full p-6 animate-slide-up">
-            <h3 className="text-xl font-bold mb-4 style={{color: 'var(--text)'}}">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 animate-slide-up" style={{boxShadow: 'var(--shadow-lg)'}}>
+            <h3 className="text-xl font-bold mb-4" style={{color: 'var(--text)'}}>
               {editingItem 
                 ? `编辑${modalType === 'account' ? '账户' : '负债'}` 
                 : `添加${modalType === 'account' ? '账户' : '负债'}`
@@ -698,7 +727,7 @@ export default function Assets({ className }: Props) {
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                   {modalType === 'account' ? '账户名称' : '负债名称'}
                 </label>
                 <input
@@ -712,7 +741,7 @@ export default function Assets({ className }: Props) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                   {modalType === 'account' ? '账户类型' : '负债类型'}
                 </label>
                 <select
@@ -730,7 +759,7 @@ export default function Assets({ className }: Props) {
 
               {modalType === 'liability' && (
                 <div>
-                  <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                     负债总额
                   </label>
                   <input
@@ -746,7 +775,7 @@ export default function Assets({ className }: Props) {
               )}
 
                <div>
-                 <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                 <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                    {modalType === 'account' ? '当前余额' : '剩余待还金额'}
                  </label>
                  <input
@@ -762,7 +791,7 @@ export default function Assets({ className }: Props) {
 
                {modalType === 'account' && (
                  <div>
-                   <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                   <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                      币种
                    </label>
                    <select
@@ -782,7 +811,7 @@ export default function Assets({ className }: Props) {
               {modalType === 'liability' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                       年利率（%）
                     </label>
                     <input
@@ -796,7 +825,7 @@ export default function Assets({ className }: Props) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                       借款日期
                     </label>
                     <input
@@ -809,7 +838,7 @@ export default function Assets({ className }: Props) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium style={{color: 'var(--text)'}} mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                       到期日期（可选）
                     </label>
                     <input
@@ -829,7 +858,7 @@ export default function Assets({ className }: Props) {
                     setShowAddModal(false)
                     setEditingItem(null)
                   }}
-                  className="flex-1 px-4 py-2.5 border style={{borderColor: 'var(--border)'}} rounded-sm hover:style={{backgroundColor: 'var(--bg-soft)'}} transition-all style={{color: 'var(--text)'}}"
+                  className="flex-1 px-4 py-2.5 border rounded-sm  transition-all" style={{borderColor: 'var(--border)', color: 'var(--text)'}}
                 >
                   取消
                 </button>
