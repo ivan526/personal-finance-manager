@@ -1,0 +1,10 @@
+{
+  "name": "personal-finance-manager",
+  "version": "1.0.0",
+  "description": "个人理财管理系统",
+  "main": "",
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

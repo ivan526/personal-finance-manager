@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinSpace｜资产统计</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root{
+      --blue:#1d6eff;
+      --blue-2:#0f63f6;
+      --blue-light:#eef6ff;
+      --navy:#0f172a;
+      --text:#334155;
+      --muted:#7b8da6;
+      --line:#edf2f7;
+      --bg:#f7faff;
+      --card:#ffffff;
+      --shadow:0 10px 30px rgba(15, 23, 42, .07);
+      --shadow-soft:0 8px 22px rgba(15, 23, 42, .05);
+    }
+    body{
+      margin:0;
+      min-height:100vh;
+      background:linear-gradient(180deg,#fbfdff 0%,#f6f9fe 100%);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Helvetica Neue",Arial,sans-serif;
+      color:var(--text);
+      overflow:hidden;
+    }
+    .page{
+      width:100vw;
+      height:100vh;
+      min-width:1200px;
+      display:flex;
+      background:linear-gradient(180deg,#fbfdff 0%,#f7faff 100%);
+    }
+
+    /* Sidebar */
+    .sidebar{
+      width:300px;
+      height:100vh;
+      background:rgba(255,255,255,.82);
+      border-right:1px solid #e7edf5;
+      padding:20px 18px 24px;
+      display:flex;
+      flex-direction:column;
+      box-shadow:8px 0 28px rgba(15,23,42,.035);
+      z-index:2;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      padding:0 12px 30px;
+    }
+    .logo{
+      width:47px;height:47px;border-radius:9px;
+      background:linear-gradient(135deg,#126aff,#4b8eff);
+      color:#fff;font-weight:800;font-size:28px;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 8px 18px rgba(29,110,255,.22);
+      line-height:1;
+    }
+    .brand-title{font-size:22px;font-weight:800;color:#111827;letter-spacing:.2px;line-height:1.08;}
+    .brand-sub{font-size:14px;color:#64748b;margin-top:5px;}
+
+    .nav{display:flex;flex-direction:column;gap:8px;padding-top:2px;}
+    .nav-item{
+      height:50px;
+      border-radius:8px;
+      display:flex;
+      align-items:center;
+      gap:13px;
+      padding:0 18px;
+      color:#26364d;
+      font-size:18px;
+      font-weight:500;
+      letter-spacing:.1px;
+    }
+    .nav-item svg{width:22px;height:22px;stroke:#3b4e68;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+    .nav-item.active{
+      color:#0b6cff;
+      background:linear-gradient(90deg,#eaf4ff 0%,#f3f8ff 100%);
+      font-weight:700;
+    }
+    .nav-item.active svg{stroke:#0b6cff;fill:#0b6cff11;}
+
+    .local-card{
+      margin:70px 8px 0;
+      border-radius:8px;
+      background:linear-gradient(135deg,#eef6ff 0%,#f8fbff 100%);
+      padding:20px 18px 18px;
+      min-height:150px;
+      box-shadow:var(--shadow-soft);
+      border:1px solid #edf5ff;
+    }
+    .local-head{
+      display:flex;align-items:center;justify-content:space-between;
+      font-size:18px;font-weight:800;color:#17345c;margin-bottom:14px;
+    }
+    .local-title{display:flex;align-items:center;gap:9px;}
+    .local-card p{
+      margin:0;
+      font-size:15px;
+      line-height:1.68;
+      color:#475569;
+      font-weight:500;
+    }
+
+    /* Main */
+    .main{
+      flex:1;
+      padding:24px 26px 28px 32px;
+      position:relative;
+      overflow:hidden;
+    }
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      padding-right:0;
+    }
+    h1{
+      margin:0;
+      font-size:34px;
+      line-height:1.12;
+      font-weight:900;
+      color:#0f172a;
+      letter-spacing:-1px;
+    }
+    .subtitle{
+      margin-top:15px;
+      color:#61738b;
+      font-size:18px;
+      font-weight:500;
+    }
+    .actions{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:18px;
+      padding-top:6px;
+    }
+    .primary-btn{
+      height:41px;
+      padding:0 22px;
+      border:0;border-radius:7px;
+      color:white;
+      background:linear-gradient(180deg,#1d74ff 0%,#075ff0 100%);
+      box-shadow:0 8px 18px rgba(29,110,255,.25);
+      font-size:17px;
+      font-weight:700;
+      display:flex;align-items:center;gap:7px;
+      cursor:pointer;
+    }
+    .ghost-action{
+      color:#607086;
+      font-size:16px;
+      font-weight:600;
+      display:flex;align-items:center;gap:8px;
+    }
+
+    .stats{
+      margin-top:30px;
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:20px;
+    }
+    .metric-card{
+      min-height:181px;
+      background:#fff;
+      border:1px solid #eef2f7;
+      border-radius:14px;
+      box-shadow:var(--shadow);
+      padding:31px 31px;
+      position:relative;
+      display:grid;
+      grid-template-columns:78px 1fr 92px;
+      align-items:center;
+      overflow:hidden;
+    }
+    .metric-card:after{
+      content:"";
+      position:absolute;right:-40px;top:-80px;
+      width:210px;height:210px;border-radius:50%;
+      background:radial-gradient(circle,rgba(37,99,235,.04),rgba(255,255,255,0) 65%);
+      pointer-events:none;
+    }
+    .metric-icon{
+      width:66px;height:66px;border-radius:14px;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .metric-icon svg{width:32px;height:32px;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+    .ic-blue{background:linear-gradient(135deg,#e6f1ff,#d7e9ff);}
+    .ic-red{background:linear-gradient(135deg,#ffecef,#ffe1e6);}
+    .ic-green{background:linear-gradient(135deg,#e5faec,#d9f7e4);}
+    .ic-orange{background:linear-gradient(135deg,#fff1df,#ffe9ca);}
+    .ic-blue svg{stroke:#176bff;fill:#176bff18;}
+    .ic-red svg{stroke:#f83b4d;fill:#f83b4d14;}
+    .ic-green svg{stroke:#18bf5f;fill:#18bf5f14;}
+    .ic-orange svg{stroke:#ff920f;fill:#ff920f14;}
+
+    .metric-body{padding-left:5px;}
+    .metric-title{
+      display:flex;align-items:center;gap:7px;
+      font-size:18px;font-weight:800;color:#28364a;
+      margin-bottom:16px;
+    }
+    .metric-title .info{
+      width:17px;height:17px;border-radius:50%;border:1.7px solid #8390a3;
+      color:#8390a3;font-size:12px;display:inline-flex;align-items:center;justify-content:center;
+      line-height:1;font-weight:800;
+    }
+    .metric-value{
+      font-size:35px;line-height:1;font-weight:900;color:#0f172a;
+      margin-bottom:25px;letter-spacing:-1px;
+    }
+    .metric-value.red{color:#ff384b;}
+    .metric-value.green{color:#10ba51;}
+    .metric-value.orange{color:#ff8a00;}
+    .metric-note{font-size:17px;color:#78879b;font-weight:600;}
+    .spark{align-self:end;justify-self:end;margin-bottom:5px;width:84px;height:45px;}
+    .spark svg{width:100%;height:100%;overflow:visible;}
+    .spark .blue{stroke:#1d6eff;}
+    .spark .red{stroke:#ff3c4f;}
+    .spark .green{stroke:#19bf62;}
+    .spark .dark{stroke:#1f2937;}
+
+    .panel{
+      margin-top:20px;
+      height:384px;
+      border-radius:13px;
+      background:#fff;
+      border:1px solid #eef2f7;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .panel-head{
+      height:75px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      padding:25px 31px 0 31px;
+    }
+    .tabs{
+      display:flex;
+      gap:56px;
+      height:50px;
+      align-items:flex-start;
+    }
+    .tab{
+      position:relative;
+      font-size:20px;
+      font-weight:700;
+      color:#607086;
+      line-height:32px;
+    }
+    .tab.active{color:#006dff;font-weight:900;}
+    .tab.active:after{
+      content:"";position:absolute;left:0;right:0;bottom:-18px;
+      height:3px;border-radius:2px;background:#0874ff;
+    }
+    .add-btn{
+      height:42px;
+      padding:0 23px;border-radius:8px;border:0;
+      color:#fff;background:linear-gradient(180deg,#1f75ff 0%,#0961ef 100%);
+      box-shadow:0 8px 18px rgba(29,110,255,.22);
+      display:flex;align-items:center;gap:8px;
+      font-size:17px;font-weight:700;
+    }
+    .empty{
+      position:absolute;left:0;right:0;top:75px;bottom:0;
+      display:flex;align-items:center;justify-content:center;flex-direction:column;
+      padding-top:10px;
+    }
+    .wallet-art{
+      width:205px;height:134px;
+      margin-bottom:12px;
+      position:relative;
+    }
+    .empty-title{
+      font-size:19px;
+      font-weight:800;
+      color:#1f2937;
+      margin-top:3px;
+    }
+    .empty-sub{
+      margin-top:18px;
+      font-size:17px;
+      color:#8a98ab;
+      font-weight:500;
+    }
+
+    /* Scale gently for smaller screens */
+    @media (max-width:1500px){
+      .sidebar{width:260px;}
+      .nav-item{font-size:16px;height:46px;}
+      .stats{gap:16px;}
+      .metric-card{padding:24px 22px;grid-template-columns:70px 1fr 74px;}
+      .metric-value{font-size:30px;}
+      .metric-title{font-size:16px;}
+      .metric-note{font-size:14px;}
+      .tabs{gap:40px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">F</div>
+        <div>
+          <div class="brand-title">FinSpace</div>
+          <div class="brand-sub">个人财务管理系统</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5v9h13v-9"/><path d="M9.5 19.5v-5h5v5"/></svg>
+          <span>个人理财管家</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>
+          <span>总览</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3.5 6h.01"/><path d="M3.5 12h.01"/><path d="M3.5 18h.01"/></svg>
+          <span>三收支记录</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M12 3v9h9"/><path d="M21 12a9 9 0 1 1-9-9"/></svg>
+          <span>预算管理</span>
+        </div>
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24"><path d="M12 3v9h9"/><path d="M21 12a9 9 0 1 1-9-9"/></svg>
+          <span>资产统计</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M5 16l4-5 4 3 6-8"/><path d="M16 6h3v3"/></svg>
+          <span>投资交易</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M4 20V6"/><path d="M8 20V10"/><path d="M12 20V4"/><path d="M16 20v-7"/><path d="M20 20V8"/><path d="M3 20h18"/></svg>
+          <span>消费分析</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.04.04a2 2 0 0 1-2.83 2.83l-.04-.04A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 0 1-4 0v-.07A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.87.34l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.1-1H3a2 2 0 0 1 0-4h.07a1.7 1.7 0 0 0 1.53-1 1.7 1.7 0 0 0-.34-1.87l-.04-.04A2 2 0 1 1 7.05 4.25l.04.04A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.1V3a2 2 0 0 1 4 0v.07a1.7 1.7 0 0 0 1 1.53 1.7 1.7 0 0 0 1.87-.34l.04-.04a2 2 0 0 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9c.2.44.56.8 1.1 1H21a2 2 0 0 1 0 4h-.07A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+          <span>系统设置</span>
+        </div>
+      </nav>
+
+      <div class="local-card">
+        <div class="local-head">
+          <div class="local-title">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 3 20 6v5c0 5.1-3.45 8.8-8 10-4.55-1.2-8-4.9-8-10V6l8-3Z" fill="#1d6eff"/><path d="m8.5 12 2.1 2.1 4.9-5.1" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>本地优先存储</span>
+          </div>
+          <span style="color:#2774ff;font-size:28px;font-weight:400;line-height:.8;">›</span>
+        </div>
+        <p>所有数据仅保存在本地浏览器中，<br>不会上传到任何服务器，保障隐私<br>安全。</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header">
+        <div>
+          <h1>资产统计</h1>
+          <div class="subtitle">全面了解您的资产状况</div>
+        </div>
+        <div class="actions">
+          <button class="primary-btn"><span style="font-size:23px;font-weight:400;margin-top:-2px;">＋</span>记一笔</button>
+          <div class="ghost-action">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3v12" stroke="#65758c" stroke-width="2" stroke-linecap="round"/><path d="m7 8 5-5 5 5" stroke="#65758c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13v6h14v-6" stroke="#65758c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>导出数据</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="stats">
+        <article class="metric-card">
+          <div class="metric-icon ic-blue">
+            <svg viewBox="0 0 24 24"><path d="M4 8.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5.8A2.8 2.8 0 0 1 3 16.7V8.8A2.8 2.8 0 0 1 5.8 6H17"/><path d="M16 13.7h4"/><path d="M16.5 14a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Z"/></svg>
+          </div>
+          <div class="metric-body">
+            <div class="metric-title">总资产 <span class="info">i</span></div>
+            <div class="metric-value">¥0</div>
+            <div class="metric-note">共 0 个账户</div>
+          </div>
+          <div class="spark">
+            <svg viewBox="0 0 100 45">
+              <path class="blue" d="M5 33 L22 25 L36 29 L52 17 L68 24 L86 12 L96 16" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path class="blue" d="M92 10 L97 16 L90 19" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-icon ic-red">
+            <svg viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="M3.5 10h17"/><path d="M8 15h3"/></svg>
+          </div>
+          <div class="metric-body">
+            <div class="metric-title">总负债 <span class="info">i</span></div>
+            <div class="metric-value red">¥0</div>
+            <div class="metric-note">共 0 项负债</div>
+          </div>
+          <div class="spark">
+            <svg viewBox="0 0 100 45">
+              <path class="red" d="M4 12 L18 21 L31 20 L47 31 L61 24 L75 21 L92 34" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path class="red" d="M88 31 L93 35 L95 28" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-icon ic-green">
+            <svg viewBox="0 0 24 24"><path d="m12 4 8 4-8 4-8-4 8-4Z"/><path d="m4 12 8 4 8-4"/><path d="m4 16 8 4 8-4"/></svg>
+          </div>
+          <div class="metric-body">
+            <div class="metric-title">净资产 <span class="info">i</span></div>
+            <div class="metric-value green">¥0</div>
+            <div class="metric-note">总资产 - 总负债</div>
+          </div>
+          <div class="spark">
+            <svg viewBox="0 0 100 45">
+              <path class="green" d="M4 34 L22 27 L36 30 L55 20 L70 13 L89 22 L97 10" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path class="green" d="M92 9 L98 10 L96 16" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-icon ic-orange">
+            <svg viewBox="0 0 24 24"><path d="M5 19V5"/><path d="M5 19h15"/><path d="M8 15l4-4 3 2 5-6"/><path d="M17 7h3v3"/></svg>
+          </div>
+          <div class="metric-body">
+            <div class="metric-title">投资收益 <span class="info">i</span></div>
+            <div class="metric-value orange">+ ¥0</div>
+            <div class="metric-note">累计收益</div>
+          </div>
+          <div class="spark">
+            <svg viewBox="0 0 100 45">
+              <path class="dark" d="M5 32 L22 25 L38 30 L54 22 L68 17 L82 21 L96 10" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path class="dark" d="M91 10 L97 10 L96 16" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div class="tabs">
+            <div class="tab active">资产账户</div>
+            <div class="tab">负债管理</div>
+            <div class="tab">资产走势</div>
+          </div>
+          <button class="add-btn"><span style="font-size:23px;font-weight:400;margin-top:-2px;">＋</span>添加账户</button>
+        </div>
+
+        <div class="empty">
+          <div class="wallet-art">
+            <svg viewBox="0 0 205 134" width="205" height="134" fill="none">
+              <ellipse cx="102" cy="110" rx="70" ry="13" fill="#eef6ff"/>
+              <path d="M45 79c-8-30 13-48 42-44 10 1 18 4 30 7 23 5 42 1 49 19 7 17-2 38-23 46-22 8-54 5-75-3-13-5-19-13-23-25Z" fill="#f2f8ff"/>
+              <path d="M42 70c3-26 24-39 53-29 25 8 42 7 59-3" stroke="#9ec8ff" stroke-width="2" stroke-dasharray="5 6" stroke-linecap="round"/>
+              <g filter="url(#w)">
+                <path d="M82 34 147 47c5 1 8 5 7 10l-12 50c-1 5-6 8-11 7L66 101c-5-1-8-6-7-11l12-48c1-6 6-9 11-8Z" fill="#73a7ff"/>
+                <path d="M82 42 146 55c4 .8 7 4.8 6 8.9l-9.4 38.5c-.9 4.2-5 6.8-9.2 6L69 95.8c-4.2-.9-6.8-5-5.9-9.2L72.5 48c.9-4.2 5.1-6.8 9.5-6Z" fill="#8db9ff"/>
+                <path d="M93 47 150 58c4 .8 6.7 4.7 5.9 8.7l-7.4 37.6c-.8 4-4.7 6.6-8.7 5.8L82.8 99c-4-.8-6.7-4.7-5.9-8.7l7.4-37.6c.8-4.1 4.7-6.7 8.7-5.9Z" fill="#6da3f9"/>
+                <path d="M122 76h35c4 0 7 3 7 7v13c0 4-3 7-7 7h-35c-4 0-7-3-7-7V83c0-4 3-7 7-7Z" fill="#d7e8ff"/>
+                <circle cx="127" cy="89" r="5" fill="#367cff"/>
+              </g>
+              <circle cx="154" cy="105" r="10" fill="#367cff"/>
+              <path d="M154 100v10M149 105h10" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+              <path d="M39 39h6M42 36v6M171 39h5M173.5 36.5v5" stroke="#7ab1ff" stroke-width="2" stroke-linecap="round"/>
+              <path d="M28 91h8M32 87v8" stroke="#9ec8ff" stroke-width="2" stroke-linecap="round"/>
+              <defs>
+                <filter id="w" x="47" y="25" width="129" height="101" filterUnits="userSpaceOnUse">
+                  <feDropShadow dx="0" dy="9" stdDeviation="8" flood-color="#6ea7ff" flood-opacity=".28"/>
+                </filter>
+              </defs>
+            </svg>
+          </div>
+          <div class="empty-title">暂无资产账户</div>
+          <div class="empty-sub">点击右上角添加您的第一个资产账户吧</div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

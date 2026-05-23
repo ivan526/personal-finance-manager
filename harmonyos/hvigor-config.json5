@@ -1,0 +1,16 @@
+{
+  "hvigorVersion": "6.0.2",
+  "nodeVersion": ">=16.0.0",
+  "buildPkgName": "@ohos/hvigor-ohos-plugin",
+  "buildPluginVersion": "6.0.2",
+  "appScope": {
+    "name": "AppScope",
+    "path": "./AppScope"
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "path": "./entry"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "apiVersion": "12",
+  "buildMode": "debug",
+  "compatibleApiVersion": "12",
+  "product": "default",
+  "buildRoot": "./build",
+  "buildOption": {
+    "strictMode": false
+  }
+}

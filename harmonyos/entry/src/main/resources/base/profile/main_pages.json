@@ -1,0 +1,10 @@
+{
+  "src": [
+    "pages/Dashboard",
+    "pages/Transactions",
+    "pages/Budget",
+    "pages/Assets",
+    "pages/Analysis",
+    "pages/Settings"
+  ]
+}

@@ -1,0 +1,36 @@
+# Build outputs
+build/
+output/
+*.hap
+*.app
+*.hsp
+*.har
+
+# Dependencies
+oh_modules/
+node_modules/
+
+# IDE
+.idea/
+.project
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local configs
+local.properties
+local.properties.bak
+signing/
+signingConfigs/
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
